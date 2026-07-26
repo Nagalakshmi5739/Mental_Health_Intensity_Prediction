@@ -120,6 +120,7 @@ def predict():
                 }
             ), 500
 
+        logger.info("Running prediction for text: %s", text[:100])
         result = predict_mental_health(text, model, tokenizer, label_encoder)
         logger.info(
             "Prediction successful for input length %d. Label: %s, Confidence: %.2f%%",
@@ -138,6 +139,29 @@ def predict():
                 "confidence": None,
             }
         ), 500
+
+
+@app.route("/test-predict", methods=["POST"])
+def test_predict():
+    """Debug endpoint that returns a dummy prediction without using the model."""
+    try:
+        data = request.get_json(force=True)
+        text = data.get("text_input", "").strip() or "test"
+        return jsonify({
+            "label": "neutral",
+            "confidence": 50.0,
+            "all_probabilities": {
+                "very negative": 10.0,
+                "negative": 20.0,
+                "neutral": 50.0,
+                "positive": 20.0,
+            },
+            "debug": "dummy prediction - model not called",
+            "text_received": text[:100],
+        })
+    except Exception as exc:
+        logger.error("Error in test-predict: %s", traceback.format_exc())
+        return jsonify({"error": str(exc)}), 500
 
 
 UPLOAD_DIR = os.path.join(BASE_DIR, "uploads")
