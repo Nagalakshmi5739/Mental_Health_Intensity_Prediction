@@ -19,8 +19,9 @@ uploads/
 glove.6B.100d.txt
 glove.840B.300d.txt
 
-# Models (optional if you don't want to upload them)
+# Models (allow .keras files in the Flask app's models directory for deployment)
 *.keras
+!Mental_Health_Flask/models/*.keras
 *.h5
 
 # Datasets (optional)

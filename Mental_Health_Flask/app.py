@@ -31,6 +31,10 @@ TOKENIZER_PATH = os.path.join(MODELS_DIR, "tokenizer.pkl")
 LABEL_ENCODER_PATH = os.path.join(MODELS_DIR, "label_encoder.pkl")
 
 
+model = None
+tokenizer = None
+label_encoder = None
+
 def load_model_artifacts():
     """
     Load the trained GRU model, tokenizer, and label encoder.
@@ -52,22 +56,22 @@ def load_model_artifacts():
                 "Ensure the trained model files are saved in the 'models/' directory."
             )
 
-    logger.info("Loading model artifacts...")
-    model = load_model(MODEL_PATH)
-    logger.info("Model loaded successfully. Input shape: %s", model.input_shape)
+    logger.info("Loading model artifacts from: %s", MODELS_DIR)
+    model_local = load_model(MODEL_PATH)
+    logger.info("Model loaded successfully. Input shape: %s", model_local.input_shape)
 
     with open(TOKENIZER_PATH, "rb") as f:
-        tokenizer = pickle.load(f)
-    logger.info("Tokenizer loaded successfully. Vocabulary size: %s", tokenizer.num_words)
+        tokenizer_local = pickle.load(f)
+    logger.info("Tokenizer loaded successfully. Vocabulary size: %s", tokenizer_local.num_words)
 
     with open(LABEL_ENCODER_PATH, "rb") as f:
-        label_encoder = pickle.load(f)
+        label_encoder_local = pickle.load(f)
     logger.info(
         "Label encoder loaded successfully. Classes: %s",
-        [int(c) for c in label_encoder.classes_],
+        [int(c) for c in label_encoder_local.classes_],
     )
 
-    return model, tokenizer, label_encoder
+    return model_local, tokenizer_local, label_encoder_local
 
 
 try:
@@ -75,7 +79,10 @@ try:
     logger.info("All artifacts loaded successfully. Server is ready.")
 except Exception as exc:
     logger.critical("Failed to load model artifacts: %s", exc)
-    raise
+    logger.critical("Server will start but predictions will fail until this is fixed.")
+    model = None
+    tokenizer = None
+    label_encoder = None
 
 
 @app.route("/", methods=["GET"])
@@ -102,6 +109,16 @@ def predict():
                     "confidence": None,
                 }
             ), 400
+
+        if model is None or tokenizer is None or label_encoder is None:
+            logger.error("Model artifacts not loaded. Cannot make predictions.")
+            return jsonify(
+                {
+                    "error": "Model is not loaded. Please check server logs.",
+                    "label": None,
+                    "confidence": None,
+                }
+            ), 500
 
         result = predict_mental_health(text, model, tokenizer, label_encoder)
         logger.info(
@@ -272,14 +289,18 @@ def health():
     """
     Health check endpoint for deployment platforms.
     """
-    return jsonify(
-        {
-            "status": "healthy",
-            "model_loaded": model is not None,
-            "tokenizer_loaded": tokenizer is not None,
-            "label_encoder_loaded": label_encoder is not None,
-        }
-    )
+    status = {
+        "status": "healthy" if model is not None else "unhealthy",
+        "model_loaded": model is not None,
+        "tokenizer_loaded": tokenizer is not None,
+        "label_encoder_loaded": label_encoder is not None,
+        "models_dir": MODELS_DIR,
+        "model_path": MODEL_PATH,
+        "model_exists": os.path.exists(MODEL_PATH) if MODEL_PATH else False,
+        "tokenizer_exists": os.path.exists(TOKENIZER_PATH) if TOKENIZER_PATH else False,
+        "label_encoder_exists": os.path.exists(LABEL_ENCODER_PATH) if LABEL_ENCODER_PATH else False,
+    }
+    return jsonify(status)
 
 
 if __name__ == "__main__":
