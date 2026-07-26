@@ -5,12 +5,19 @@ import traceback
 import pickle
 import pandas as pd
 
-os.environ.setdefault("TF_CPP_MIN_LOG_LEVEL", "2")
+os.environ.setdefault("TF_CPP_MIN_LOG_LEVEL", "3")
 os.environ["TF_ENABLE_ONEDNN_OPTS"] = "0"
+os.environ["OMP_NUM_THREADS"] = "1"
 warnings.filterwarnings("ignore", category=UserWarning, module="google.protobuf")
 
 from flask import Flask, render_template, request, jsonify, send_file
 from werkzeug.utils import secure_filename
+
+import tensorflow as tf
+
+tf.config.threading.set_intra_op_parallelism_threads(1)
+tf.config.threading.set_inter_op_parallelism_threads(1)
+
 from tensorflow.keras.models import load_model
 
 from utils.predictor import predict_mental_health
@@ -35,6 +42,29 @@ model = None
 tokenizer = None
 label_encoder = None
 
+
+def optimize_tensorflow():
+    """Configure TensorFlow for low-resource environments like Render Free."""
+    tf.config.threading.set_intra_op_parallelism_threads(1)
+    tf.config.threading.set_inter_op_parallelism_threads(1)
+    tf.config.set_soft_device_placement(True)
+
+
+def warmup_model(model_local, tokenizer_local):
+    """Run a dummy inference to warm up the model."""
+    try:
+        dummy_text = "warmup"
+        dummy_padded = tokenizer_local.texts_to_sequences([dummy_text])
+        from tensorflow.keras.preprocessing.sequence import pad_sequences
+        dummy_padded = pad_sequences(
+            dummy_padded, maxlen=100, padding="pre", truncating="pre"
+        )
+        model_local.predict(dummy_padded, verbose=0)
+        logger.info("Model warmup completed successfully.")
+    except Exception as exc:
+        logger.warning("Model warmup failed: %s", exc)
+
+
 def load_model_artifacts():
     """
     Load the trained GRU model, tokenizer, and label encoder.
@@ -45,6 +75,8 @@ def load_model_artifacts():
     Raises:
         FileNotFoundError: If any artifact is missing.
     """
+    optimize_tensorflow()
+
     for path, name in [
         (MODEL_PATH, "Keras model"),
         (TOKENIZER_PATH, "Tokenizer"),
@@ -70,6 +102,8 @@ def load_model_artifacts():
         "Label encoder loaded successfully. Classes: %s",
         [int(c) for c in label_encoder_local.classes_],
     )
+
+    warmup_model(model_local, tokenizer_local)
 
     return model_local, tokenizer_local, label_encoder_local
 
