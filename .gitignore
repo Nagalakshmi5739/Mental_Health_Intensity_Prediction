@@ -1,0 +1,28 @@
+# Python
+__pycache__/
+*.pyc
+
+# Virtual environment
+venv/
+.env
+
+# Jupyter
+.ipynb_checkpoints/
+
+# Logs
+*.log
+
+# Uploads
+uploads/
+
+# Large NLP files
+glove.6B.100d.txt
+glove.840B.300d.txt
+
+# Models (optional if you don't want to upload them)
+*.keras
+*.h5
+
+# Datasets (optional)
+*.csv
+*.xlsx

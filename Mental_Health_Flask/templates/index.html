@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mental Health Intensity Prediction</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Mental Health Intensity Prediction</h1>
+        </header>
+
+        <main class="glass-card">
+            <form id="predictForm">
+                <div class="input-group">
+                    <label for="textInput">Enter your text:</label>
+                    <textarea
+                        id="textInput"
+                        placeholder="Type or paste your text here... e.g., 'I feel really anxious and overwhelmed today'"
+                        rows="5"
+                        required
+                    ></textarea>
+                </div>
+
+                <div class="button-group">
+                    <button type="submit" id="predictBtn" class="btn-primary">
+                        Predict Intensity
+                    </button>
+                    <button type="button" id="resetBtn" class="btn-secondary">
+                        Reset
+                    </button>
+                </div>
+            </form>
+
+            <div id="loading" class="hidden">
+                <div class="spinner"></div>
+                <p class="loading-text">Analyzing your text...</p>
+            </div>
+
+            <div id="resultCard" class="result-card hidden">
+                <h2>Prediction Result</h2>
+                <div class="result-content">
+                    <div class="predicted-label">
+                        <span class="label">Predicted Class:</span>
+                        <span id="predictedClass" class="class-badge"></span>
+                    </div>
+                    <div class="confidence-score">
+                        <span class="label">Confidence:</span>
+                        <span id="confidenceScore" class="confidence-value"></span>
+                    </div>
+                </div>
+                <div id="probabilities" class="probabilities"></div>
+            </div>
+
+            <div id="errorCard" class="error-card hidden">
+                <h3>Error</h3>
+                <p id="errorMessage"></p>
+            </div>
+
+            <section id="uploadSection" class="upload-section glass-card">
+                <h2>Batch Upload</h2>
+                <p class="subtitle">Upload a CSV or Excel file to predict on multiple texts at once.</p>
+
+                <div class="file-drop-zone" id="dropZone">
+                    <input type="file" id="fileInput" accept=".csv,.xlsx,.xls" hidden>
+                    <label for="fileInput" id="fileLabel">
+                        <span class="file-icon">&#128194;</span>
+                        <span id="fileName">Choose a CSV or Excel file</span>
+                    </label>
+                    <p class="file-hint">Supports .csv, .xlsx, .xls</p>
+                </div>
+
+                <button type="button" id="uploadBtn" class="btn-primary" disabled>
+                    Predict All
+                </button>
+            </section>
+
+            <div id="batchResultCard" class="result-card hidden">
+                <h2>Batch Results</h2>
+                <div class="batch-summary">
+                    <div class="summary-item">
+                        <span class="label">Total:</span>
+                        <span id="totalCount" class="summary-value"></span>
+                    </div>
+                    <div class="summary-item">
+                        <span class="label">Correct:</span>
+                        <span id="correctCount" class="summary-value correct"></span>
+                    </div>
+                    <div class="summary-item">
+                        <span class="label">Accuracy:</span>
+                        <span id="accuracyPercent" class="summary-value"></span>
+                    </div>
+                </div>
+                <div id="batchTableWrapper" class="table-wrapper">
+                    <table id="batchTable" class="result-table">
+                        <thead>
+                            <tr>
+                                <th>Text</th>
+                                <th>Predicted</th>
+                                <th>Actual</th>
+                                <th>Correct</th>
+                            </tr>
+                        </thead>
+                        <tbody id="batchTableBody"></tbody>
+                    </table>
+                </div>
+                <a id="downloadLink" class="btn-primary" style="display:none;">Download CSV</a>
+            </div>
+        </main>
+
+        <footer>
+            <p>DEVELOPED BY CHERUKUPALLI NAGA LAKSHMI </p>
+        </footer>
+    </div>
+
+    <script src="{{ url_for('static', filename='js/script.js') }}"></script>
+</body>
+</html>
