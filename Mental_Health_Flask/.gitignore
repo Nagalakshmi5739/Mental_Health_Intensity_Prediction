@@ -30,9 +30,7 @@ Thumbs.db
 # Flask/uploads
 uploads/
 
-# Model files
-model/*.keras
-model/*.pkl
+# Model files are tracked in the repository for deployment
 
 # Logs
 *.log
