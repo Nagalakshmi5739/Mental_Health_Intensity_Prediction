@@ -5,22 +5,13 @@ import traceback
 import pickle
 
 
+os.environ["KERAS_BACKEND"] = "torch"
 os.environ.setdefault("TF_CPP_MIN_LOG_LEVEL", "3")
-os.environ["TF_ENABLE_ONEDNN_OPTS"] = "0"
-os.environ["TF_NUM_INTEROP_THREADS"] = "1"
-os.environ["TF_NUM_INTRAOP_THREADS"] = "1"
-os.environ["MALLOC_TRIM_THRESHOLD_"] = "65536"
-warnings.filterwarnings("ignore", category=UserWarning, module="google.protobuf")
 
 from flask import Flask, render_template, request, jsonify, send_file
 from werkzeug.utils import secure_filename
 
-import tensorflow as tf
-
-tf.config.threading.set_intra_op_parallelism_threads(1)
-tf.config.threading.set_inter_op_parallelism_threads(1)
-
-from tensorflow.keras.models import load_model
+from keras.models import load_model
 
 from utils.predictor import predict_mental_health
 
@@ -46,10 +37,7 @@ label_encoder = None
 
 
 def optimize_tensorflow():
-    """Configure TensorFlow for low-resource environments like Render Free."""
-    tf.config.threading.set_intra_op_parallelism_threads(1)
-    tf.config.threading.set_inter_op_parallelism_threads(1)
-    tf.config.set_soft_device_placement(True)
+    pass
 
 
 def warmup_model(model_local, tokenizer_local):
@@ -57,7 +45,7 @@ def warmup_model(model_local, tokenizer_local):
     try:
         dummy_text = "warmup"
         dummy_padded = tokenizer_local.texts_to_sequences([dummy_text])
-        from tensorflow.keras.preprocessing.sequence import pad_sequences
+        from keras.utils import pad_sequences
         dummy_padded = pad_sequences(
             dummy_padded, maxlen=100, padding="pre", truncating="pre"
         )
@@ -77,7 +65,7 @@ def load_model_artifacts():
     Raises:
         FileNotFoundError: If any artifact is missing.
     """
-    optimize_tensorflow()
+    pass
 
     for path, name in [
         (MODEL_PATH, "Keras model"),

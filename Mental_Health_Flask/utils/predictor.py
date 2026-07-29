@@ -5,7 +5,7 @@ Wraps model inference, tokenization, padding, and label decoding
 so the Flask app stays clean and focused on routing.
 """
 import numpy as np
-from tensorflow.keras.preprocessing.sequence import pad_sequences
+from keras.utils import pad_sequences
 
 from utils.preprocess import preprocess_text
 
