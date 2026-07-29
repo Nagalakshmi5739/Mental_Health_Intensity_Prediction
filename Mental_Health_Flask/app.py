@@ -11,7 +11,7 @@ os.environ["MKL_NUM_THREADS"] = "1"
 from flask import Flask, render_template, request, jsonify, send_file
 from werkzeug.utils import secure_filename
 
-import tflite_runtime.interpreter as tflite
+import tensorflow.lite as tflite
 import json
 
 from utils.predictor import predict_mental_health
@@ -103,6 +103,7 @@ try:
     logger.info("All artifacts loaded successfully. Server is ready.")
 except Exception as exc:
     logger.critical("Failed to load model artifacts: %s", exc)
+    logger.critical("Traceback: %s", traceback.format_exc())
     logger.critical("Server will start but predictions will fail until this is fixed.")
     model = None
     tokenizer = None
