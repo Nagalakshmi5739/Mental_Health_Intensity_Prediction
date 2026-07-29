@@ -62,7 +62,9 @@ def predict_mental_health(text: str, model, tokenizer, label_encoder) -> dict:
     """
     cleaned = preprocess_text(text)
     padded = tokenize_and_pad(cleaned, tokenizer)
-    probabilities = model.predict(padded, verbose=0)[0]
+    import torch
+    with torch.no_grad():
+        probabilities = model(padded, training=False).cpu().numpy()[0]
     predicted_index = int(np.argmax(probabilities))
     raw_label = label_encoder.inverse_transform([predicted_index])[0]
     predicted_label = LABEL_MAP.get(int(raw_label), str(raw_label))

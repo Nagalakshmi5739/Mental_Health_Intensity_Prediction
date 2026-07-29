@@ -5,6 +5,11 @@ import traceback
 import pickle
 
 
+os.environ["OMP_NUM_THREADS"] = "1"
+os.environ["MKL_NUM_THREADS"] = "1"
+os.environ["OPENBLAS_NUM_THREADS"] = "1"
+os.environ["VECLIB_MAXIMUM_THREADS"] = "1"
+os.environ["NUMEXPR_NUM_THREADS"] = "1"
 os.environ["KERAS_BACKEND"] = "torch"
 os.environ.setdefault("TF_CPP_MIN_LOG_LEVEL", "3")
 
@@ -12,6 +17,8 @@ from flask import Flask, render_template, request, jsonify, send_file
 from werkzeug.utils import secure_filename
 
 from keras.models import load_model
+import torch
+torch.set_num_threads(1)
 
 from utils.predictor import predict_mental_health
 
@@ -49,7 +56,9 @@ def warmup_model(model_local, tokenizer_local):
         dummy_padded = pad_sequences(
             dummy_padded, maxlen=100, padding="pre", truncating="pre"
         )
-        model_local.predict(dummy_padded, verbose=0)
+        import torch
+        with torch.no_grad():
+            model_local(dummy_padded, training=False)
         logger.info("Model warmup completed successfully.")
     except Exception as exc:
         logger.warning("Model warmup failed: %s", exc)
