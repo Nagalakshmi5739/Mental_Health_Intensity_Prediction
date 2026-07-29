@@ -166,13 +166,20 @@ document.addEventListener('DOMContentLoaded', () => {
                 body: JSON.stringify({ text_input: text }),
             });
 
-            const data = await response.json();
-
             if (!response.ok) {
-                showError(data.error || 'Failed to get prediction.');
+                let errorMessage = `Server returned status ${response.status}. Please try again later.`;
+                try {
+                    const errData = await response.json();
+                    if (errData && errData.error) {
+                        errorMessage = errData.error;
+                    }
+                } catch (_) {}
+                showError(errorMessage);
+                setLoadingState(false);
                 return;
             }
 
+            const data = await response.json();
             displayResult(data);
         } catch (err) {
             console.error('Prediction error:', err);
@@ -254,8 +261,16 @@ document.addEventListener('DOMContentLoaded', () => {
                 });
 
                 if (!response.ok) {
-                    const errData = await response.json();
+                    let errData;
+                    try {
+                        errData = await response.json();
+                    } catch (jsonErr) {
+                        showError('Batch prediction failed: Server returned an invalid response.');
+                        setLoadingState(false);
+                        return;
+                    }
                     showError(errData.error || 'Batch prediction failed.');
+                    setLoadingState(false);
                     return;
                 }
 
