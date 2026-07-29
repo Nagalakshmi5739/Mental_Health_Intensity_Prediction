@@ -24,6 +24,15 @@ document.addEventListener('DOMContentLoaded', () => {
     const accuracyPercent = document.getElementById('accuracyPercent');
     const dropZone = document.getElementById('dropZone');
 
+    const IMAGE_EXTENSIONS = new Set([
+        ".png", ".jpg", ".jpeg", ".gif", ".bmp", ".tiff", ".tif", ".webp", ".svg", ".ico",
+    ]);
+
+    const isImageFile = (filename) => {
+        const ext = filename.substring(filename.lastIndexOf(".")).toLowerCase();
+        return IMAGE_EXTENSIONS.has(ext);
+    };
+
     const validateInput = () => {
         const text = textInput.value.trim();
         if (text.length === 0) {
@@ -175,7 +184,15 @@ document.addEventListener('DOMContentLoaded', () => {
     if (fileInput) {
         fileInput.addEventListener('change', () => {
             if (fileInput.files.length > 0) {
-                fileName.textContent = fileInput.files[0].name;
+                const file = fileInput.files[0];
+                if (isImageFile(file.name)) {
+                    showError(`Cannot read '${file.name}' (this model does not support image input). Please upload a CSV or Excel file instead.`);
+                    fileName.textContent = 'Choose a CSV or Excel file';
+                    uploadBtn.disabled = true;
+                    fileInput.value = '';
+                    return;
+                }
+                fileName.textContent = file.name;
                 uploadBtn.disabled = false;
             } else {
                 fileName.textContent = 'Choose a CSV or Excel file';
@@ -204,8 +221,15 @@ document.addEventListener('DOMContentLoaded', () => {
             e.preventDefault();
             dropZone.style.borderColor = '';
             if (e.dataTransfer.files.length > 0) {
+                const file = e.dataTransfer.files[0];
+                if (isImageFile(file.name)) {
+                    showError(`Cannot read '${file.name}' (this model does not support image input). Please upload a CSV or Excel file instead.`);
+                    fileName.textContent = 'Choose a CSV or Excel file';
+                    uploadBtn.disabled = true;
+                    return;
+                }
                 fileInput.files = e.dataTransfer.files;
-                fileName.textContent = e.dataTransfer.files[0].name;
+                fileName.textContent = file.name;
                 uploadBtn.disabled = false;
             }
         });

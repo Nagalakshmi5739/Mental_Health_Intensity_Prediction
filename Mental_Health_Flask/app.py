@@ -202,11 +202,19 @@ UPLOAD_DIR = os.path.join(BASE_DIR, "uploads")
 os.makedirs(UPLOAD_DIR, exist_ok=True)
 
 ALLOWED_EXTENSIONS = {".csv", ".xlsx", ".xls"}
+IMAGE_EXTENSIONS = {
+    ".png", ".jpg", ".jpeg", ".gif", ".bmp", ".tiff", ".tif", ".webp", ".svg", ".ico"
+}
 
 
 def _allowed_file(filename):
     _, ext = os.path.splitext(filename)
     return ext.lower() in ALLOWED_EXTENSIONS
+
+
+def _is_image_file(filename):
+    _, ext = os.path.splitext(filename)
+    return ext.lower() in IMAGE_EXTENSIONS
 
 
 def _detect_text_column(df):
@@ -255,6 +263,13 @@ def upload_predict():
         safe_name = secure_filename(file.filename or "")
         if not safe_name or safe_name.strip() == "":
             return jsonify({"error": "No file selected or invalid filename."}), 400
+
+        if _is_image_file(safe_name):
+            return jsonify(
+                {
+                    "error": f"Cannot read '{safe_name}' (this model does not support image input). Please upload a CSV or Excel file instead."
+                }
+            ), 400
 
         if not _allowed_file(safe_name):
             return jsonify(
