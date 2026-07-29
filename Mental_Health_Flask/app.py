@@ -3,7 +3,7 @@ import warnings
 import logging
 import traceback
 import pickle
-import pandas as pd
+
 
 os.environ.setdefault("TF_CPP_MIN_LOG_LEVEL", "3")
 os.environ["TF_ENABLE_ONEDNN_OPTS"] = "0"
@@ -250,6 +250,7 @@ def _detect_actual_column(df):
 
 @app.route("/upload", methods=["POST"])
 def upload_predict():
+    import pandas as pd
     """
     Endpoint to upload a CSV or Excel file for batch prediction.
     Expected file field: 'file'

@@ -1,1 +1,1 @@
-web: gunicorn --chdir Mental_Health_Flask app:app --workers 1 --threads 1 --timeout 120 --log-file -
+web: cd Mental_Health_Flask && waitress-serve --port=$PORT --threads=1 app:app
