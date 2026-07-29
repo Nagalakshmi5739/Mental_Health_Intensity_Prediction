@@ -1,2 +1,1 @@
-Mental_Health_Flask/models/*.keras filter=lfs diff=lfs merge=lfs -text
-Mental_Health_Flask/models/*.pkl filter=lfs diff=lfs merge=lfs -text
+# No Git LFS rules. Model files under 25MB are tracked directly as standard Git binary files.

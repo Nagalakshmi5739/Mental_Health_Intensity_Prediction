@@ -11,14 +11,21 @@ from nltk.corpus import stopwords
 from nltk.stem import WordNetLemmatizer
 from nltk.tokenize import word_tokenize
 
-# Ensure NLTK resources are available
-for _resource in ["punkt", "punkt_tab", "stopwords", "wordnet"]:
+for _resource in ["tokenizers/punkt", "tokenizers/punkt_tab", "corpora/stopwords", "corpora/wordnet"]:
     try:
         nltk.data.find(_resource)
     except LookupError:
-        nltk.download(_resource, quiet=True)
+        try:
+            res_name = _resource.split("/")[-1]
+            nltk.download(res_name, quiet=True)
+        except Exception:
+            pass
 
-stop_words = set(stopwords.words("english"))
+try:
+    stop_words = set(stopwords.words("english"))
+except Exception:
+    stop_words = set()
+
 keep_words = {
     "not", "no", "nor", "never",
     "don't", "didn't", "doesn't",
@@ -47,15 +54,6 @@ def preprocess_text(text: str) -> str:
     7. Remove custom stopwords
     8. Lemmatize with pos='v'
     9. Join back into a single space-separated string
-
-    Args:
-        text: Raw user input string.
-
-    Returns:
-        Cleaned, space-joined string ready for the Keras tokenizer.
-
-    Raises:
-        ValueError: If input is not a string.
     """
     if not isinstance(text, str):
         raise ValueError("Input must be a string.")
@@ -66,8 +64,17 @@ def preprocess_text(text: str) -> str:
     text = re.sub(r"[^\w\s']", "", text)
     text = re.sub(r"\s+", " ", text).strip()
 
-    tokens = word_tokenize(text)
-    tokens = [word for word in tokens if word.lower() not in custom_stopwords]
-    tokens = [lemmatizer.lemmatize(word, pos="v") for word in tokens]
+    try:
+        tokens = word_tokenize(text)
+    except Exception:
+        tokens = text.split()
+
+    if custom_stopwords:
+        tokens = [word for word in tokens if word.lower() not in custom_stopwords]
+
+    try:
+        tokens = [lemmatizer.lemmatize(word, pos="v") for word in tokens]
+    except Exception:
+        pass
 
     return " ".join(tokens)
