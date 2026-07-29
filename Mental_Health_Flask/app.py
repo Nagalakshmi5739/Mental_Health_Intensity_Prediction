@@ -7,18 +7,12 @@ import pickle
 
 os.environ["OMP_NUM_THREADS"] = "1"
 os.environ["MKL_NUM_THREADS"] = "1"
-os.environ["OPENBLAS_NUM_THREADS"] = "1"
-os.environ["VECLIB_MAXIMUM_THREADS"] = "1"
-os.environ["NUMEXPR_NUM_THREADS"] = "1"
-os.environ["KERAS_BACKEND"] = "torch"
-os.environ.setdefault("TF_CPP_MIN_LOG_LEVEL", "3")
 
 from flask import Flask, render_template, request, jsonify, send_file
 from werkzeug.utils import secure_filename
 
-from keras.models import load_model
-import torch
-torch.set_num_threads(1)
+import tflite_runtime.interpreter as tflite
+import json
 
 from utils.predictor import predict_mental_health
 
@@ -33,8 +27,8 @@ app = Flask(__name__)
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 MODELS_DIR = os.path.join(BASE_DIR, "models")
-MODEL_PATH = os.path.join(MODELS_DIR, "glove_gru.keras")
-TOKENIZER_PATH = os.path.join(MODELS_DIR, "tokenizer.pkl")
+MODEL_PATH = os.path.join(MODELS_DIR, "glove_gru.tflite")
+TOKENIZER_PATH = os.path.join(MODELS_DIR, "tokenizer.json")
 LABEL_ENCODER_PATH = os.path.join(MODELS_DIR, "label_encoder.pkl")
 
 
@@ -50,15 +44,11 @@ def optimize_tensorflow():
 def warmup_model(model_local, tokenizer_local):
     """Run a dummy inference to warm up the model."""
     try:
-        dummy_text = "warmup"
-        dummy_padded = tokenizer_local.texts_to_sequences([dummy_text])
-        from keras.utils import pad_sequences
-        dummy_padded = pad_sequences(
-            dummy_padded, maxlen=100, padding="pre", truncating="pre"
-        )
-        import torch
-        with torch.no_grad():
-            model_local(dummy_padded, training=False)
+        import numpy as np
+        dummy_padded = np.zeros((1, 100), dtype=np.float32)
+        input_details = model_local.get_input_details()
+        model_local.set_tensor(input_details[0]['index'], dummy_padded)
+        model_local.invoke()
         logger.info("Model warmup completed successfully.")
     except Exception as exc:
         logger.warning("Model warmup failed: %s", exc)
@@ -77,8 +67,8 @@ def load_model_artifacts():
     pass
 
     for path, name in [
-        (MODEL_PATH, "Keras model"),
-        (TOKENIZER_PATH, "Tokenizer"),
+        (MODEL_PATH, "TFLite model"),
+        (TOKENIZER_PATH, "Tokenizer JSON"),
         (LABEL_ENCODER_PATH, "Label encoder"),
     ]:
         if not os.path.exists(path):
@@ -88,12 +78,13 @@ def load_model_artifacts():
             )
 
     logger.info("Loading model artifacts from: %s", MODELS_DIR)
-    model_local = load_model(MODEL_PATH)
-    logger.info("Model loaded successfully. Input shape: %s", model_local.input_shape)
+    model_local = tflite.Interpreter(model_path=MODEL_PATH)
+    model_local.allocate_tensors()
+    logger.info("Model loaded successfully.")
 
-    with open(TOKENIZER_PATH, "rb") as f:
-        tokenizer_local = pickle.load(f)
-    logger.info("Tokenizer loaded successfully. Vocabulary size: %s", tokenizer_local.num_words)
+    with open(TOKENIZER_PATH, "r") as f:
+        tokenizer_local = json.load(f)
+    logger.info("Tokenizer loaded successfully. Vocabulary size: %s", len(tokenizer_local))
 
     with open(LABEL_ENCODER_PATH, "rb") as f:
         label_encoder_local = pickle.load(f)
