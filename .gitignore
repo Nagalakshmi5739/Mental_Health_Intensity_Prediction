@@ -24,6 +24,8 @@ glove.840B.300d.txt
 !Mental_Health_Flask/models/*.keras
 *.h5
 
-# Datasets (optional)
+# Datasets (optional - specific files are tracked)
 *.csv
+!mental_health.csv
 *.xlsx
+!test_data.xlsx
